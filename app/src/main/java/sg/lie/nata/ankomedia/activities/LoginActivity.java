@@ -1,10 +1,12 @@
 package sg.lie.nata.ankomedia.activities;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.twitter.sdk.android.Twitter;
 import com.twitter.sdk.android.core.Callback;
@@ -25,31 +27,9 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        String twitterKey = BuildConfig.twitterKey;
-        String twitterSecret = BuildConfig.twitterSecret;
+        setupTwitter();
 
-        TwitterAuthConfig authConfig = new TwitterAuthConfig(twitterKey, twitterSecret);
-        Fabric.with(this, new Twitter(authConfig));
-        setContentView(R.layout.activity_login);
-
-        loginButton = (TwitterLoginButton) findViewById(R.id.twitter_login_button);
-        loginButton.setCallback(new Callback<TwitterSession>() {
-            @Override
-            public void success(Result<TwitterSession> result) {
-                // The TwitterSession is also available through:
-                // Twitter.getInstance().core.getSessionManager().getActiveSession()
-                TwitterSession session = result.data;
-                // TODO: Remove toast and use the TwitterSession's userID
-                // with your app's user model
-                String msg = "@" + session.getUserName() + " logged in! (#" + session.getUserId() + ")";
-                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void failure(TwitterException exception) {
-                Log.d("TwitterKit", "Login with Twitter failure", exception);
-            }
-        });
+        initialiseTwitterButton();
     }
 
     @Override
@@ -60,5 +40,56 @@ public class LoginActivity extends AppCompatActivity {
         loginButton.onActivityResult(requestCode, resultCode, data);
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
+    }
+
+    private void setupTwitter() {
+        String twitterKey = BuildConfig.twitterKey;
+        String twitterSecret = BuildConfig.twitterSecret;
+
+        TwitterAuthConfig authConfig = new TwitterAuthConfig(twitterKey, twitterSecret);
+        Fabric.with(this, new Twitter(authConfig));
+        setContentView(R.layout.activity_login);
+    }
+
+    private void initialiseTwitterButton() {
+        loginButton = (TwitterLoginButton) findViewById(R.id.twitter_login_button);
+        loginButton.setCallback(getTwitterCallback());
+    }
+
+    @NonNull
+    private Callback<TwitterSession> getTwitterCallback() {
+        return new Callback<TwitterSession>() {
+            @Override
+            public void success(Result<TwitterSession> result) {
+                // The TwitterSession is also available through:
+                // Twitter.getInstance().core.getSessionManager().getActiveSession()
+                signInSuccessful(result);
+            }
+
+            @Override
+            public void failure(TwitterException exception) {
+                signInFailure(exception);
+            }
+        };
+    }
+
+    void signInSuccessful(Result<TwitterSession> result) {
+        TwitterSession session = result.data;
+
+        // Successfully logged in
+        // Save the auth token into shared prefs
+        String token = session.getAuthToken().token;
+        saveTokenInPrefs(token);
+    }
+
+    void saveTokenInPrefs(String token) {
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.auth_token), token);
+        editor.apply();
+    }
+
+    void signInFailure(TwitterException exception) {
+        Log.d("TwitterKit", "Login with Twitter failure", exception);
     }
 }
