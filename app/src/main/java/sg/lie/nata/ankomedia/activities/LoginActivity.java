@@ -23,13 +23,10 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupTwitter();
         setContentView(R.layout.activity_login);
 
-        setupTwitter();
-        SharedPreferencesManager sharedPreferencesManager =
-                new SharedPreferencesManager(
-                        this,
-                        PreferenceManager.getDefaultSharedPreferences(this));
+        SharedPreferencesManager sharedPreferencesManager = new SharedPreferencesManager(this);
         twitterSessionManager = new TwitterSessionManager(sharedPreferencesManager);
 
         initialiseTwitterButton();
