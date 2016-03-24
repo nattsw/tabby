@@ -1,8 +1,5 @@
 package sg.lie.nata.ankomedia.managers;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -11,13 +8,11 @@ import com.twitter.sdk.android.core.Result;
 import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.TwitterSession;
 
-import sg.lie.nata.ankomedia.R;
-
 public class TwitterSessionManager {
-    private Context mContext;
+    private SharedPreferencesManager mSharedPreferencesManager;
 
-    public TwitterSessionManager(Context context) {
-        mContext = context;
+    public TwitterSessionManager(SharedPreferencesManager sharedPreferencesManager) {
+        mSharedPreferencesManager = sharedPreferencesManager;
     }
 
     @NonNull
@@ -43,14 +38,7 @@ public class TwitterSessionManager {
         // Successfully logged in
         // Save the auth token into shared prefs
         String token = session.getAuthToken().token;
-        saveTokenInPrefs(token);
-    }
-
-    void saveTokenInPrefs(String token) {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(mContext);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(mContext.getString(R.string.auth_token), token);
-        editor.apply();
+        mSharedPreferencesManager.saveAuthToken(token);
     }
 
     void signInFailure(TwitterException exception) {
